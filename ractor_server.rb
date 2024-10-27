@@ -54,7 +54,7 @@ class RactorServer
           conn.puts "HTTP/1.1 #{status} OK"
           response_headers.each { |k, v| conn.puts "#{k}: #{v}" }
           conn.puts
-          body.each { |part| conn.puts part }
+          body.each { |line| conn.puts line }
         ensure
           conn&.close
         end
