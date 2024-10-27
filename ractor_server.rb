@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+# shareable_constant_value: experimental_everything
 
 require 'socket'
 
@@ -37,27 +38,23 @@ class RactorServer
         loop do
           conn = queue.take
 
-          path = '/'
-
-          env = { 
-            Rack::REQUEST_METHOD => 'GET',
-            Rack::SCRIPT_NAME => '',
-            Rack::PATH_INFO => path,
-            Rack::SERVER_NAME => server.options[:Host],
-            Rack::RACK_INPUT => conn,
-            Rack::RACK_ERRORS => $stderr,
-            Rack::QUERY_STRING => '',
-            Rack::REQUEST_PATH => path,
-            Rack::RACK_URL_SCHEME => 'http',
-            Rack::SERVER_PROTOCOL => 'HTTP/1.1'
+          env = {
+            'REQUEST_METHOD' => 'GET',
+            'SCRIPT_NAME' => '',
+            'PATH_INFO' => '/',
+            'QUERY_STRING' => '',
+            'SERVER_NAME' => server.options[:Host].to_s,
+            'SERVER_PORT' => server.options[:Port].to_s,
+            'SERVER_PROTOCOL' => 'HTTP/1.1',
+            'rack.url_scheme' => 'http',
+            'rack.errors' => $stderr,
           }
 
-          # server.app.call(env) # cant use this because of the ractor
-          conn.puts "HTTP/1.1 200 OK"
-          conn.puts "Content-Type: text/html"
-          conn.puts "Content-Length: 11"
-          conn.puts ""
-          conn.puts "Hello World"
+          server.app.call(env) => status, response_headers, body
+          conn.puts "HTTP/1.1 #{status} OK"
+          response_headers.each { |k, v| conn.puts "#{k}: #{v}" }
+          conn.puts
+          body.each { |part| conn.puts part }
         ensure
           conn&.close
         end
@@ -75,9 +72,7 @@ class RactorServer
     Ractor.select(listener)
   end
 
-  private
-
-  def write_pid
+  private def write_pid
     File.open('tmp/pids/ractor_server.pid', 'w') { |f| f.write(Process.pid) }
   end
 end

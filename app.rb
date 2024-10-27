@@ -1,10 +1,14 @@
+# frozen_string_literal: true
+
 class App
   def call(env)
-    if env['PATH_INFO'] == '/'
-      [200, {}, ['It works!']]
-    else
-      [404, {}, ['Not Found']]
-    end
+    response_headers = { 'Content-Type' => 'text/plain' }
+    response_headers.transform_keys!(&:downcase)
+    [
+      200,
+      response_headers,
+      ['Hello, World!']
+    ]
   end
 end
 
